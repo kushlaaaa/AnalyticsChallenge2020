@@ -1,0 +1,96 @@
+
+```{r}
+
+library(tidyverse)
+library(mclust)
+options(scipen=10)
+
+```
+
+##Data
+```{r}
+playerdata <- read_csv("PlayerData.csv")
+eventdata <- read_csv("FinalEventData.csv")
+urlfile = "https://raw.githubusercontent.com/SportsInfoSolutions/AnalyticsChallenge2020/master/Data/AnalyticsChallenge2020Data.csv"
+rawdata<-read_csv(url(urlfile))
+
+data <- rawdata %>% filter(RosterPosition == "DE" | RosterPosition == "DT")
+
+data <- data %>%
+  group_by(PlayerId) %>%
+  summarize(Name = first(Name),
+            Position = first(RosterPosition),
+            Tech1 = sum(TechniqueName == 1)/ n(),
+            Tech2 = sum(TechniqueName == 2)/ n(),
+            Tech3 = sum(TechniqueName == 3)/ n(),
+            Tech4 = sum(TechniqueName == 4)/ n(),
+            Tech5 = sum(TechniqueName == 5)/ n(),
+            Tech6 = sum(TechniqueName == 6)/ n(),
+            Tech7 = sum(TechniqueName == 7)/ n(),
+            Tech9= sum(TechniqueName == 9)/ n(),
+            TechOB = sum(TechniqueName == "Off Ball")/ n(),
+            TechOUT = sum(TechniqueName == "Outside")/ n(),
+            Tech2i = sum(TechniqueName == "2i")/ n(),
+            Tech4i = sum(TechniqueName == "4i")/ n(),
+            Tech0 = sum(TechniqueName == 0)/ n(),
+            count = n())
+data <- data %>% filter(count > 20)
+moddata <- data %>%  filter(count > 20) 
+moddata <- moddata %>% select(-c(Position, Name))
+
+
+df <- scale(moddata[,-1])
+df <- as.matrix(df)
+
+cluster <- Mclust(df, G = 2:20, modelName = c("EII","VII","EEI","VEI","EVI","VVI","EEE","EVE","VEE","VVE","EEV","VEV","EVV","VVV"))
+summary(cluster)
+
+cluster$classification
+data$cluster <- cluster$classification
+data$cluster1prob <- cluster$z[,1] 
+data$cluster2prob <- cluster$z[,2] 
+
+data
+```
+
+##PlayerCluster
+```{r}
+clusterplayerdata <- playerdata %>% select(c(DT, DE, RosterLB, LeftSide, RightSide, Tech0, Tech1, Tech2, Tech2i, Tech3, Tech4, Tech4i, Tech5, Tech6, Tech7, Tech9, TechOff, TechOutside))
+
+df <- scale(clusterplayerdata[,-1])
+df <- as.matrix(df)
+
+cluster <- Mclust(df, G = 2:20, modelName = c("EII","VII","EEI","VEI","EVI","VVI","EEE","EVE","VEE","VVE","EEV","VEV","EVV","VVV"))
+summary(cluster)
+cluster$classification
+clusterplayerdata$cluster <- cluster$classification
+cluster$z
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

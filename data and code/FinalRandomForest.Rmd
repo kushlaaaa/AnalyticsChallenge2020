@@ -1,0 +1,91 @@
+
+```{r}
+library(randomForest)
+library(caTools)
+library(tidyverse)
+
+```
+
+```{r}
+urlfile = "https://raw.githubusercontent.com/SportsInfoSolutions/AnalyticsChallenge2020/master/Data/AnalyticsChallenge2020Data.csv"
+rawdata<-read_csv(url(urlfile))
+rawdata <- fastDummies::dummy_cols(rawdata, select_columns = "SideOfBall")
+
+data <- rawdata %>% filter(RosterPosition == "DE" | RosterPosition == "DT")
+
+data <- data %>%
+  group_by(PlayerId) %>%
+  summarize(Name = first(Name),
+            Position = first(RosterPosition),
+            Tech1 = sum(TechniqueName == 1)/ n(),
+            Tech2 = sum(TechniqueName == 2)/ n(),
+            Tech3 = sum(TechniqueName == 3)/ n(),
+            Tech4 = sum(TechniqueName == 4)/ n(),
+            Tech5 = sum(TechniqueName == 5)/ n(),
+            Tech6 = sum(TechniqueName == 6)/ n(),
+            Tech7 = sum(TechniqueName == 7)/ n(),
+            Tech9= sum(TechniqueName == 9)/ n(),
+            TechOB = sum(TechniqueName == "Off Ball")/ n(),
+            TechOUT = sum(TechniqueName == "Outside")/ n(),
+            Tech2i = sum(TechniqueName == "2i")/ n(),
+            Tech4i = sum(TechniqueName == "4i")/ n(),
+            Tech0 = sum(TechniqueName == 0)/ n(),
+            EPA = mean(EPA, na.rm = TRUE), 
+            SoloTackle = sum(SoloTackle, na.rm = TRUE), 
+            AssistedTackle = sum(AssistedTackle, na.rm = TRUE), 
+            SoloSack = sum(SoloSack, na.rm = TRUE), 
+            AssistedSack = sum(AssistedSack, na.rm = TRUE),
+            Pressure = sum(Pressure, na.rm=TRUE), 
+            PassBreakup = sum(PassBreakup, na.rm = TRUE), 
+            Interception = sum(Interception, na.rm = TRUE), 
+            ForcedFumble = sum(ForcedFumble, na.rm = TRUE),
+            LeftSide = sum(SideOfBall_L, na.rm = TRUE), 
+            RightSide = sum(SideOfBall_R, na.rm = TRUE),
+            count = n())
+
+rfdata <- data
+rfdata$DE <- ifelse(data$Position == "DE", 1, 0)
+rfdata$DT <- ifelse(data$Position == "DT", 1, 0)
+
+statrfdata <- rfdata %>% select(-c(Name, Position, EPA, PlayerId, LeftSide, RightSide))
+nostatsrfdata <- rfdata %>% select(-c(Name, Position, EPA, PlayerId, SoloTackle, AssistedTackle, SoloSack, AssistedSack, Pressure, PassBreakup, Interception, ForcedFumble, LeftSide, RightSide))
+
+DEStats <- statrfdata %>% select(-c(DT))
+DENoStats <- nostatsrfdata %>% select(-c(DT))
+
+DTStats <- statrfdata %>% select(-c(DE))
+DTNoStats <- nostatsrfdata %>% select(-c(DE))
+
+##DE STATS
+sDErf <- randomForest(DE ~ .,data=DEStats, ntree=1000)
+sDErf
+
+sDEpred = predict(sDErf, data=DEStats)
+rfdata$DEStatsPred <- sDEpred
+
+##DE NO STATS
+DErf <- randomForest(DE ~ .,data=DENoStats, ntree=1000)
+DErf
+
+DEpred = predict(DErf, data=DENoStats)
+rfdata$DENoStatsPred <- DEpred
+
+##DT STATS
+sDTrf <- randomForest(DT ~ .,data=DTStats, ntree=1000)
+sDTrf
+
+sDTpred = predict(sDTrf, data=DTStats)
+rfdata$DTStatsPred <- sDTpred
+
+##DT NO STATS
+DTrf <- randomForest(DT ~ .,data=DTNoStats, ntree=1000)
+DTrf
+
+DTpred = predict(DTrf, data=DTNoStats)
+rfdata$DTNoStatsPred <- DTpred
+
+rfdata$DominantSide <- ifelse(rfdata$LeftSide > rfdata$RightSide, "L", "R")
+
+write_csv(rfdata, "Data.csv")
+```
+

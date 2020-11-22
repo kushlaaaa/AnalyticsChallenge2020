@@ -1,0 +1,125 @@
+```{r}
+library(tidyverse)
+library(ggplot2)
+options(scipen=999)
+
+```
+
+```{r}
+data <- read_csv("MasterSheet.csv")
+data <- data %>% filter(count > 50)
+
+
+LPbarchart <- ggplot(data, aes(y=factor(LabelledPosition), fill=factor(LabelledPosition)))+geom_bar(stat = "count") + theme_bw() + theme(legend.position = "none") + ylab("Labelled Position") + ggtitle("Count of Each Labelled Position")
+LPbarchart
+
+Clusterbarchart <- ggplot(data, aes(y=factor(MiniMaxCluster), fill=factor(RfPredPos)))+geom_bar(stat = "count") + theme_bw() + labs(fill="Predicted Position") +ylab("Cluster") + ggtitle("Breakdown of Each Cluster")
+Clusterbarchart
+ggsave("Clusterbarchart.jpeg")
+
+##Box Plots for Ridge Rating
+ClusterRidge <- ggplot(data, aes(x=factor(MiniMaxCluster), y=RidgeRating, fill=factor(MiniMaxCluster)))  + geom_boxplot()
+ClusterRidge
+table(data$MiniMaxCluster)
+
+RfPredPosRidge <- ggplot(data, aes(x=factor(RfPredPos), y=RidgeRating, fill=factor(RfPredPos)))  + geom_boxplot()
+RfPredPosRidge
+table(data$RfPredPos)
+
+LabelledPositionRidge <- ggplot(data, aes(x=factor(LabelledPosition), y=RidgeRating, fill=factor(LabelledPosition)))  + geom_boxplot()
+LabelledPositionRidge
+table(data$LabelledPosition)
+
+
+##Box Plots for EPA Ridge
+ClusterEPARidge <- ggplot(data, aes(x=factor(MiniMaxCluster), y=coef.EPAridge., fill=factor(MiniMaxCluster)))  + geom_boxplot()
+ClusterEPARidge
+table(data$MiniMaxCluster)
+
+RfPredPosEPARidge <- ggplot(data, aes(x=factor(RfPredPos), y=coef.EPAridge., fill=factor(RfPredPos)))  + geom_boxplot()
+RfPredPosEPARidge
+table(data$RfPredPos)
+
+LabelledPositionEPARidge <- ggplot(data, aes(x=factor(LabelledPosition), y=coef.EPAridge., fill=factor(LabelledPosition)))  + geom_boxplot()
+LabelledPositionEPARidge
+table(data$LabelledPosition)
+
+##Box Plots for Avg Salary
+ClusterSalary <- ggplot(data, aes(x=factor(MiniMaxCluster), y=AvgSalary, fill=factor(MiniMaxCluster)))  + geom_boxplot()
+ClusterSalary
+table(data$MiniMaxCluster)
+
+RfPredPosSalary <- ggplot(data, aes(x=factor(RfPredPos), y=AvgSalary, fill=factor(RfPredPos)))  + geom_boxplot()
+RfPredPosSalary
+table(data$RfPredPos)
+
+LabelledPositionSalary <- ggplot(data, aes(x=factor(LabelledPosition), y=AvgSalary, fill=factor(LabelledPosition)))  + geom_boxplot()
+LabelledPositionSalary
+table(data$LabelledPosition)
+
+
+##Valuation
+ContractValue <- ggplot(data, aes(x=AvgSalary, y=RidgeRating, color=factor(LabelledPosition))) + geom_point() 
+ContractValue
+
+
+data2 <- data %>%  group_by(LabelledPosition) %>% summarize(RidgeRating = mean(RidgeRating), AvgSalary = mean(AvgSalary), AdjDVOAEPA = mean(AdjDVOAEPA), KushRating = mean(KushRatiing), count=n())
+
+RidgeRating <- ggplot(data2, aes(x=AvgSalary, y=RidgeRating, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("RidgeRating versus Average Salary") + xlab("Average Salary") + ylab("Ridge Rating") + coord_flip() + theme(legend.position = "none")
+RidgeRating
+
+
+AdjDVOAEPA <- ggplot(data2, aes(x=AvgSalary, y=AdjDVOAEPA, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("Adjusted DVOA EPA versus Average Salary") + xlab("Average Salary") + ylab("Adj DVOA EPA") + theme(legend.position = "none") + coord_flip()
+AdjDVOAEPA
+
+RawStatsRating <- ggplot(data2, aes(x=AvgSalary, y=KushRating, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("Raw Stats Rating versus Average Salary") + xlab("Average Salary") + ylab("Raw Stats Rating") + theme(legend.position = "none") +coord_flip()
+RawStatsRating
+
+install.packages("gridExtra")
+library(gridExtra)
+
+par(mfrow=c(3,1))
+ggplot(data2, aes(x=AvgSalary, y=RidgeRating, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("RidgeRating versus Average Salary") + xlab("Average Salary") + ylab("Ridge Rating") 
+ggplot(data2, aes(x=AvgSalary, y=AdjDVOAEPA, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("Adjusted DVOA EPA versus Average Salary") + xlab("Average Salary") + ylab("Adj DVOA EPA")
+ggplot(data2, aes(x=AvgSalary, y=KushRating, color=factor(LabelledPosition))) + geom_point(size=5) + theme_bw() + ggtitle("Raw Stats Rating versus Average Salary") + xlab("Average Salary") + ylab("Raw Stats Rating")
+
+get_legend <- function(myggplot){
+        tmp <- ggplot_gtable(ggplot_build(myggplot))
+        leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+        legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+legend <- get_legend(RidgeRating)
+
+tmp <- ggplot_gtable(ggplot_build(RidgeRating)) + theme_bw()
+tmp
+blankPlot <- ggplot()+geom_blank(aes(1,1))+
+  theme(
+    plot.background = element_blank(), 
+   panel.grid.major = element_blank(),
+   panel.grid.minor = element_blank(), 
+   panel.border = element_blank(),
+   panel.background = element_blank(),
+   axis.title.x = element_blank(),
+   axis.title.y = element_blank(),
+   axis.text.x = element_blank(), 
+   axis.text.y = element_blank(),
+   axis.ticks = element_blank(),
+   axis.line = element_blank()
+     )
+
+final <- grid.arrange(RidgeRating, blankPlot, AdjDVOAEPA, legend, RawStatsRating, ncol=2, nrow=3, widths=c(6,2))
+
+ggsave("Final.jpeg", final)
+
+```
+
+```{r}
+
+
+
+
+
+```
+

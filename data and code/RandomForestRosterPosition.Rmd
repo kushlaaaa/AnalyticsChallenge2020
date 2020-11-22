@@ -1,0 +1,245 @@
+
+
+```{r}
+library(randomForest)
+library(caTools)
+library(tidyverse)
+```
+
+##Data Cleaning
+```{r}
+
+formatdata <- read_csv("PlayerData.csv")
+
+
+formatdata$DEBinary <- ifelse(data$DE > 1, 1, 0)
+formatdata$DTBinary <- ifelse(data$DT > 1, 1, 0)
+formatdata$RosterLBBinary <- ifelse(data$RosterLB > 1, 1, 0)
+
+formatdata$DER = ifelse(data$DEBinary == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$DEL = ifelse(data$DEBinary == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$RosterLBR = ifelse(data$RosterLBBinary == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$RosterLBL = ifelse(data$RosterLBBinary == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$DTR = ifelse(data$DTBinary == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$DTL = ifelse(data$DTBinary == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$DominantSide = ifelse(data$RightSide>data$LeftSide, "R", "L")
+
+write_csv(formatdata, "RFRosterData.csv")
+
+```
+
+##Factor Data (Predicting 1s and 0s)
+```{r}
+data <- read_csv("RFRosterData.csv")
+data <- data %>% select(-c(LB, DL))
+colnames(data)
+
+##RightSide Defensive End
+DERdata <- data %>% select(-c(PlayerId, Name, DEL, DE, RosterLBR, RosterLBL, DTR, DTL, DT, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+DERdata$DER <- as.factor(DERdata$DER)
+
+DERrf <- randomForest(DER ~ .,data=DERdata, ntree=1000)
+DERrf
+
+DERpred = predict(DERrf, data=DERdata)
+DERdata$DERPred <- DERpred
+
+##LeftSide Defensive End
+DELdata <- data %>% select(-c(PlayerId, Name, DER, RosterLBR, RosterLBL, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+DELdata$DEL <- as.factor(DELdata$DEL)
+
+DELrf <- randomForest(DEL ~ .,data=DELdata, ntree=1000)
+DELrf
+
+DELpred = predict(DELrf, data=DELdata)
+DELdata$DELPred <- DELpred
+
+##RightSide Linebacker 
+RosterLBRdata <- data %>% select(-c(PlayerId, Name, DEL, DER, RosterLBL, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+RosterLBRdata$RosterLBR <- as.factor(RosterLBRdata$RosterLBR)
+
+RosterLBRrf <- randomForest(RosterLBR ~ .,data=RosterLBRdata, ntree=1000)
+RosterLBRrf
+
+RosterLBRpred = predict(RosterLBRrf, data=RosterLBRdata)
+RosterLBRdata$RosterLBRPred <- RosterLBRpred
+
+##LeftSide Linebacker
+RosterLBLdata <- data %>% select(-c(PlayerId, Name, DEL, RosterLBR, DER, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide))
+
+RosterLBLdata$RosterLBL <- as.factor(RosterLBLdata$RosterLBL)
+
+RosterLBLrf <- randomForest(RosterLBL ~ .,data=RosterLBLdata, ntree=1000)
+RosterLBLrf
+
+RosterLBLpred = predict(RosterLBLrf, data=RosterLBLdata)
+RosterLBLdata$RosterLBLPred <- RosterLBLpred
+
+##RightSide Hybrid
+DTRdata <- data %>% select(-c(PlayerId, Name, DEL, RosterLBR, RosterLBL, DER, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide, DTBinary))
+
+DTRdata$DTR <- as.factor(DTRdata$DTR)
+
+DTRrf <- randomForest(DTR ~ .,data=DTRdata, ntree=1000)
+DTRrf
+
+DTRpred = predict(DTRrf, data=DTRdata)
+DTRdata$DTRPred <- DTRpred
+
+#LeftSide DT
+DTLdata <- data %>% select(-c(PlayerId, Name, DEL, RosterLBR, RosterLBL, DTR, DER, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide, DTBinary))
+
+DTLdata$DTL <- as.factor(DTLdata$DTL)
+
+DTLrf <- randomForest(DTL ~ .,data=DTLdata, ntree=1000)
+DTLrf
+
+DTLpred = predict(DTLrf, data=DTLdata)
+DTLdata$DTLPred <- DTLpred
+
+##New Columns
+data$DERPrediction <- DERdata$DERPred 
+data$DELPrediction <- DELdata$DELPred
+data$RosterLBRPrediction <- RosterLBRdata$RosterLBRPred
+data$RosterLBLPrediction <- RosterLBLdata$RosterLBLPred
+data$DTRPrediction <- DTRdata$DTRPred
+data$DTLPrediction <- DTLdata$DTLPred
+
+write_csv(data, "RosterPlayerDataPred.csv")
+
+```
+
+
+##ProbValues
+```{r}
+ProbData <- read_csv("RFRosterData.csv")
+ProbData <- ProbData %>% select(-c(LB, DL))
+
+##RightSide Defensive End
+DERProbData <- ProbData %>% select(-c(PlayerId, Name, DEL, DE, RosterLBR, RosterLBL, DTR, DTL, DT, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+DERrf <- randomForest(DER ~ .,data=DERProbData, ntree=1000)
+DERrf
+
+DERpred = predict(DERrf, data=DERProbData)
+DERpred
+DERProbData$DERPred <- DERpred
+
+##LeftSide Defensive End
+DELProbData <- ProbData %>% select(-c(PlayerId, Name, DER, RosterLBR, RosterLBL, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+DELrf <- randomForest(DEL ~ .,data=DELProbData, ntree=1000)
+DELrf
+
+DELpred = predict(DELrf, data=DELProbData)
+DELProbData$DELPred <- DELpred
+
+##RightSide Linebacker 
+RosterLBRProbData <- ProbData %>% select(-c(PlayerId, Name, DEL, DER, RosterLBL, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DTBinary, DominantSide))
+
+RosterLBRrf <- randomForest(RosterLBR ~ .,data=RosterLBRProbData, ntree=1000)
+RosterLBRrf
+
+RosterLBRpred = predict(RosterLBRrf, data=RosterLBRProbData)
+RosterLBRProbData$RosterLBRPred <- RosterLBRpred
+
+##LeftSide Linebacker
+RosterLBLProbData <- ProbData %>% select(-c(PlayerId, Name, DEL, RosterLBR, DER, DTR, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide))
+
+RosterLBLrf <- randomForest(RosterLBL ~ .,data=RosterLBLProbData, ntree=1000)
+RosterLBLrf
+
+RosterLBLpred = predict(RosterLBLrf, data=RosterLBLProbData)
+RosterLBLProbData$RosterLBLPred <- RosterLBLpred
+
+##RightSide Hybrid
+DTRProbData <- ProbData %>% select(-c(PlayerId, Name, DEL, RosterLBR, RosterLBL, DER, DTL, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide, DTBinary))
+
+DTRrf <- randomForest(DTR ~ .,data=DTRProbData, ntree=1000)
+DTRrf
+
+DTRpred = predict(DTRrf, data=DTRProbData)
+DTRProbData$DTRPred <- DTRpred
+
+#LeftSide DT
+DTLProbData <- ProbData %>% select(-c(PlayerId, Name, DEL, RosterLBR, RosterLBL, DTR, DER, DE, RosterLB, LeftSide, RightSide, DEBinary, RosterLBBinary, DT, DominantSide, DTBinary))
+
+DTLrf <- randomForest(DTL ~ .,data=DTLProbData, ntree=1000)
+DTLrf
+
+DTLpred = predict(DTLrf, data=DTLProbData)
+DTLProbData$DTLPred <- DTLpred
+
+##New Columns
+ProbData$DERPrediction <- DERProbData$DERPred 
+ProbData$DELPrediction <- DELProbData$DELPred
+ProbData$RosterLBRPrediction <- RosterLBRProbData$RosterLBRPred
+ProbData$RosterLBLPrediction <- RosterLBLProbData$RosterLBLPred
+ProbData$DTRPrediction <- DTRProbData$DTRPred
+ProbData$DTLPrediction <- DTLProbData$DTLPred
+
+write_csv(ProbData, "RosterPlayerProbDataPred.csv")
+```
+
+
+
+```{r}
+data <- read_csv("RFRosterData.csv")
+data <- data %>% select(-c(LB, DL))
+
+colnames(data)
+
+nostatdata <- data %>% select(-c(PlayerId, Name, EPA, SoloTackle, AssistedTackle, SoloSack, AssistedSack, Pressure, PassBreakup, Interception, ForcedFumble, LeftSide, RightSide, RosterLB, RosterLBBinary, DER, DEL, RosterLBR, RosterLBL, DTR, DTL, DominantSide))
+colnames(nostatdata)
+
+DEData <- nostatdata %>% select(-c(DT, DE, DTBinary))
+
+DErf <- randomForest(DEBinary ~ .,data=DEData, ntree=1000)
+DErf
+
+DEpred = predict(DErf, data=DEData)
+DEpred
+nostatdata$DETechPred <- DEpred
+
+DTData <- nostatdata %>% select(-c(DT, DE, DEBinary))
+
+DTrf <- randomForest(DTBinary ~ .,data=DTData, ntree=1000)
+DTrf
+
+DTpred = predict(DTrf, data=DTData)
+DTpred
+nostatdata$DTTechPred <- DTpred
+
+
+
+statdata <- data %>% select(-c(PlayerId, Name, LeftSide, RightSide, RosterLB, RosterLBBinary, DER, DEL, RosterLBR, RosterLBL, DTR, DTL, DominantSide))
+colnames(statdata)
+
+sDEData <- statdata %>% select(-c(DT, DE, DTBinary))
+
+sDErf <- randomForest(DEBinary ~ .,data=sDEData, ntree=1000)
+sDErf
+
+sDEpred = predict(sDErf, data=sDEData)
+sDEpred
+statdata$sDETechPred <- sDEpred
+
+sDTData <- statdata %>% select(-c(DT, DE, DEBinary))
+
+sDTrf <- randomForest(DTBinary ~ .,data=sDTData, ntree=1000)
+sDTrf
+
+sDTpred = predict(sDTrf, data=sDTData)
+sDTpred
+statdata$sDTTechPred <- sDTpred
+
+data$DETechPred <- DEpred
+data$DTTechPred <- DTpred
+data$sDETechPred <- sDEpred
+data$sDTTechPred <- sDTpred
+
+```
+

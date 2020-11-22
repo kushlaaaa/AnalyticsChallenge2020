@@ -1,0 +1,202 @@
+
+```{r}
+library(randomForest)
+library(caTools)
+library(tidyverse)
+```
+
+##DataCleaning
+```{r}
+formatdata <- read_csv("PlayerData.csv")
+
+formatdata$DLBinary <- ifelse(data$DL - data$LB > 25, 1, 0)
+formatdata$LBBinary <- ifelse(data$LB - data$DL > 25, 1, 0)
+formatdata$Hybrid <- ifelse(formatdata$LBBinary == 0 & formatdata$DLBinary == 0, 1, 0)
+
+formatdata$DLR = ifelse(formatdata$DLBinary == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$DLL = ifelse(formatdata$DLBinary == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$LBR = ifelse(formatdata$LBBinary == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$LBL = ifelse(formatdata$LBBinary == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$HybridR = ifelse(formatdata$Hybrid == 1 & data$RightSide>data$LeftSide, 1, 0)
+formatdata$HybridL = ifelse(formatdata$Hybrid == 1 & data$RightSide<data$LeftSide, 1, 0)
+formatdata$DominantSide = ifelse(data$RightSide>data$LeftSide, "R", "L")
+
+write_csv(formatdata, "RFOnFieldData.csv")
+
+```
+
+##Factor Data (Predicting 1s and 0s)
+```{r}
+data <- read_csv("RFOnFieldData.csv")
+
+##RightSide Defensive Line
+DLRdata <- data %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+DLRdata$DLR <- as.factor(DLRdata$DLR)
+
+DLRrf <- randomForest(DLR ~ .,data=DLRdata, ntree=1000)
+DLRrf
+
+DLRpred = predict(DLRrf, data=DLRdata)
+DLRdata$DLRPred <- DLRpred
+
+##LeftSide Defensive Line
+DLLdata <- data %>% select(-c(PlayerId, Name, DLR, LBR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+DLLdata$DLL <- as.factor(DLLdata$DLL)
+
+DLLrf <- randomForest(DLL ~ .,data=DLLdata, ntree=1000)
+DLLrf
+
+DLLpred = predict(DLLrf, data=DLLdata)
+DLLdata$DLLPred <- DLLpred
+
+##RightSide Linebacker 
+LBRdata <- data %>% select(-c(PlayerId, Name, DLL, DLR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+LBRdata$LBR <- as.factor(LBRdata$LBR)
+
+LBRrf <- randomForest(LBR ~ .,data=LBRdata, ntree=1000)
+LBRrf
+
+LBRpred = predict(LBRrf, data=LBRdata)
+LBRdata$LBRPred <- LBRpred
+
+##LeftSide Linebacker
+LBLdata <- data %>% select(-c(PlayerId, Name, DLL, LBR, DLR, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+LBLdata$LBL <- as.factor(LBLdata$LBL)
+
+LBLrf <- randomForest(LBL ~ .,data=LBLdata, ntree=1000)
+LBLrf
+
+LBLpred = predict(LBLrf, data=LBLdata)
+LBLdata$LBLPred <- LBLpred
+
+##RightSide Hybrid
+HybridRdata <- data %>% select(-c(PlayerId, Name, DLL, LBR, LBL, DLR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+HybridRdata$HybridR <- as.factor(HybridRdata$HybridR)
+
+HybridRrf <- randomForest(HybridR ~ .,data=HybridRdata, ntree=1000)
+HybridRrf
+
+HybridRpred = predict(HybridRrf, data=HybridRdata)
+HybridRdata$HybridRPred <- HybridRpred
+
+#LeftSide Hybrid
+HybridLdata <- data %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, DLR, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+HybridLdata$HybridL <- as.factor(HybridLdata$HybridL)
+
+HybridLrf <- randomForest(HybridL ~ .,data=HybridLdata, ntree=1000)
+HybridLrf
+
+HybridLpred = predict(HybridLrf, data=HybridLdata)
+HybridLdata$HybridLPred <- HybridLpred
+
+#Hybrid
+Hybriddata <- data %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, DLR, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, DLR, DominantSide))
+
+Hybriddata$Hybrid <- as.factor(Hybriddata$Hybrid)
+
+Hybridrf <- randomForest(Hybrid ~ .,data=Hybriddata, ntree=1000)
+Hybridrf
+
+Hybridpred = predict(Hybridrf, data=Hybriddata)
+Hybriddata$HybridPred <- Hybridpred
+
+##New Columns
+data$DLRPrediction <- DLRdata$DLRPred 
+data$DLLPrediction <- DLLdata$DLLPred
+data$LBRPrediction <- LBRdata$LBRPred
+data$LBLPrediction <- LBLdata$LBLPred
+data$HybridRPrediction <- HybridRdata$HybridRPred
+data$HybridLPrediction <- HybridLdata$HybridLPred
+data$HybridPrediction <- Hybriddata$HybridPred 
+
+write_csv(data, "PlayerDataPred.csv")
+
+```
+
+
+```{r}
+ProbData <- read_csv("RFOnFieldData.csv")
+
+##RightSide Defensive Line
+DLRProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+DLRrf <- randomForest(DLR ~ .,data=DLRProbData, ntree=1000)
+DLRrf
+
+DLRpred = predict(DLRrf, data=DLRProbData)
+DLRProbData$DLRPred <- DLRpred
+
+##LeftSide Defensive Line
+DLLProbData <- ProbData %>% select(-c(PlayerId, Name, DLR, LBR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+DLLrf <- randomForest(DLL ~ .,data=DLLProbData, ntree=1000)
+DLLrf
+
+DLLpred = predict(DLLrf, data=DLLProbData)
+DLLProbData$DLLPred <- DLLpred
+
+##RightSide Linebacker 
+LBRProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, DLR, LBL, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+LBRrf <- randomForest(LBR ~ .,data=LBRProbData, ntree=1000)
+LBRrf
+
+LBRpred = predict(LBRrf, data=LBRProbData)
+LBRProbData$LBRPred <- LBRpred
+
+##LeftSide Linebacker
+LBLProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, LBR, DLR, HybridR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+LBLrf <- randomForest(LBL ~ .,data=LBLProbData, ntree=1000)
+LBLrf
+
+LBLpred = predict(LBLrf, data=LBLProbData)
+LBLProbData$LBLPred <- LBLpred
+
+##RightSide Hybrid
+HybridRProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, LBR, LBL, DLR, HybridL, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+HybridRrf <- randomForest(HybridR ~ .,data=HybridRProbData, ntree=1000)
+HybridRrf
+
+HybridRpred = predict(HybridRrf, data=HybridRProbData)
+HybridRProbData$HybridRPred <- HybridRpred
+
+#LeftSide Hybrid
+HybridLProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, DLR, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, Hybrid, DominantSide))
+
+HybridLrf <- randomForest(HybridL ~ .,data=HybridLProbData, ntree=1000)
+HybridLrf
+
+HybridLpred = predict(HybridLrf, data=HybridLProbData)
+HybridLProbData$HybridLPred <- HybridLpred
+
+#Hybrid
+HybridProbData <- ProbData %>% select(-c(PlayerId, Name, DLL, LBR, LBL, HybridR, DLR, DL, LB, LeftSide, RightSide, DLBinary, LBBinary, DLR, DominantSide))
+
+Hybridrf <- randomForest(Hybrid ~ .,data=HybridProbData, ntree=1000)
+Hybridrf
+
+Hybridpred = predict(Hybridrf, data=HybridProbData)
+HybridProbData$HybridPred <- Hybridpred
+
+##New Columns
+ProbData$DLRPrediction <- DLRProbData$DLRPred 
+ProbData$DLLPrediction <- DLLProbData$DLLPred
+ProbData$LBRPrediction <- LBRProbData$LBRPred
+ProbData$LBLPrediction <- LBLProbData$LBLPred
+ProbData$HybridRPrediction <- HybridRProbData$HybridRPred
+ProbData$HybridLPrediction <- HybridLProbData$HybridLPred
+ProbData$HybridPrediction <- HybridProbData$HybridPred 
+
+write_csv(ProbData, "PlayerProbDataPred.csv")
+
+```
+
+

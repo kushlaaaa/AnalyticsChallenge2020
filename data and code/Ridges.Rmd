@@ -1,0 +1,186 @@
+##Packages and Data
+```{r}
+library(readr)
+library(tidyverse)
+library(ridge)
+
+urlfile = "https://raw.githubusercontent.com/SportsInfoSolutions/AnalyticsChallenge2020/master/Data/AnalyticsChallenge2020Data.csv"
+mydata<-read_csv(url(urlfile))
+rawdata<-mydata
+
+groupedeventdata <- read_csv("FinalEventData.csv")
+
+```
+
+
+```{r}
+
+EPAridgedata <- groupedeventdata %>%  select(c(EPA, Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.1")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.2")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.3")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.4")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.5")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.6")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.7")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.8")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.9")
+EPAridgedata <- fastDummies::dummy_cols(EPAridgedata, select_columns = "Name.10")
+EPAridgedata <- EPAridgedata %>% select(-c(Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+colnames(EPAridgedata) <- sub("Name.1_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.2_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.3_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.4_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.5_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.6_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.7_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.8_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.9_", "", colnames(EPAridgedata))
+colnames(EPAridgedata) <-sub("Name.10_", "", colnames(EPAridgedata))
+
+EPAridgedata <- sapply(split.default(EPAridgedata, names(EPAridgedata)), rowSums, na.rm = TRUE)
+EPAridgedata <- as.data.frame(EPAridgedata)
+EPAridgedata <- EPAridgedata %>% select(EPA, everything())
+
+EPAridgedata
+
+linearRidge(EPA~., EPAridgedata) -> EPAridge
+EPAridge
+
+EPAcoef <- data.frame(coef(EPAridge))
+
+write_csv(EPAridgedata, "EPAridgedata.csv")
+write_csv(EPAcoef, "EPAcoefdata.csv")
+
+```
+
+```{r}
+Sackridgedata <- groupedeventdata %>%  select(c(SackOnPlay, Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+Sackridgedata$SackOnPlay <- as.numeric(Sackridgedata$SackOnPlay)
+
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.1")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.2")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.3")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.4")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.5")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.6")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.7")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.8")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.9")
+Sackridgedata <- fastDummies::dummy_cols(Sackridgedata, select_columns = "Name.10")
+Sackridgedata <- Sackridgedata %>% select(-c(Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+colnames(Sackridgedata) <- sub("Name.1_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.2_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.3_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.4_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.5_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.6_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.7_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.8_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.9_", "", colnames(Sackridgedata))
+colnames(Sackridgedata) <-sub("Name.10_", "", colnames(Sackridgedata))
+
+Sackridgedata <- sapply(split.default(Sackridgedata, names(Sackridgedata)), rowSums, na.rm = TRUE)
+Sackridgedata <- as.data.frame(Sackridgedata)
+Sackridgedata <- Sackridgedata %>% select(SackOnPlay, everything())
+
+Sackridgedata
+
+linearRidge(SackOnPlay~., Sackridgedata) -> Sackridge
+Sackridge
+
+Sackcoef <- data.frame(coef(Sackridge))
+
+write_csv(Sackridgedata, "Sackridgedata.csv")
+write_csv(Sackcoef, "Sackcoefdata.csv")
+
+```
+
+```{r}
+Pressureridgedata <- groupedeventdata %>%  select(c(PressureOnPlay, Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+Pressureridgedata$PressureOnPlay <- as.numeric(Pressureridgedata$PressureOnPlay)
+
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.1")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.2")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.3")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.4")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.5")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.6")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.7")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.8")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.9")
+Pressureridgedata <- fastDummies::dummy_cols(Pressureridgedata, select_columns = "Name.10")
+Pressureridgedata <- Pressureridgedata %>% select(-c(Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+colnames(Pressureridgedata) <- sub("Name.1_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.2_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.3_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.4_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.5_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.6_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.7_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.8_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.9_", "", colnames(Pressureridgedata))
+colnames(Pressureridgedata) <-sub("Name.10_", "", colnames(Pressureridgedata))
+
+Pressureridgedata <- sapply(split.default(Pressureridgedata, names(Pressureridgedata)), rowSums, na.rm = TRUE)
+Pressureridgedata <- as.data.frame(Pressureridgedata)
+Pressureridgedata <- Pressureridgedata %>% select(PressureOnPlay, everything())
+
+Pressureridgedata
+
+linearRidge(PressureOnPlay~., Pressureridgedata) -> Pressureridge
+Pressureridge
+
+Pressurecoef <- data.frame(coef(Pressureridge))
+
+write_csv(Pressureridgedata, "Pressureridgedata.csv")
+write_csv(Pressurecoef, "Pressurecoefdata.csv")
+
+```
+
+
+```{r}
+OffensiveYardageridgedata <- groupedeventdata %>%  select(c(OffensiveYardage, Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.1")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.2")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.3")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.4")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.5")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.6")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.7")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.8")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.9")
+OffensiveYardageridgedata <- fastDummies::dummy_cols(OffensiveYardageridgedata, select_columns = "Name.10")
+OffensiveYardageridgedata <- OffensiveYardageridgedata %>% select(-c(Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+colnames(OffensiveYardageridgedata) <- sub("Name.1_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.2_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.3_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.4_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.5_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.6_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.7_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.8_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.9_", "", colnames(OffensiveYardageridgedata))
+colnames(OffensiveYardageridgedata) <-sub("Name.10_", "", colnames(OffensiveYardageridgedata))
+
+OffensiveYardageridgedata <- sapply(split.default(OffensiveYardageridgedata, names(OffensiveYardageridgedata)), rowSums, na.rm = TRUE)
+OffensiveYardageridgedata <- as.data.frame(OffensiveYardageridgedata)
+OffensiveYardageridgedata <- OffensiveYardageridgedata %>% select(OffensiveYardage, everything())
+
+OffensiveYardageridgedata
+
+linearRidge(OffensiveYardage~., OffensiveYardageridgedata) -> OffensiveYardageridge
+OffensiveYardageridge
+
+OffensiveYardagecoef <- data.frame(coef(OffensiveYardageridge))
+
+write_csv(OffensiveYardageridgedata, "OffensiveYardageridgedata.csv")
+write_csv(OffensiveYardagecoef, "OffensiveYardagecoefdata.csv")
+```
+

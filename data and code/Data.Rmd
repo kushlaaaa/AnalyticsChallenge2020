@@ -1,0 +1,163 @@
+
+```{r}
+library(readr)
+library(tidyverse)
+library(mclust)
+
+
+urlfile = "https://raw.githubusercontent.com/SportsInfoSolutions/AnalyticsChallenge2020/master/Data/AnalyticsChallenge2020Data.csv"
+mydata<-read_csv(url(urlfile))
+
+unique(mydata$Week)
+rawdata<-mydata
+library(ridge)
+```
+
+##EventDataAs1row
+```{r}
+
+eventdata <- rawdata
+eventdata$EventCode <- paste(eventdata$GameID, eventdata$EventID)
+eventdata$EventCode <- gsub(" ", "", eventdata$EventCode)
+
+eventdata1 <- eventdata %>% mutate(PlayerIDs=PlayerId,Names=Name,RosterPositions=RosterPosition,OnFieldPositions=OnFieldPosition,SideOfBalls=SideOfBall,TechniqueNames=TechniqueName,IsRushings=IsRushing,SoloTackles=SoloTackle,AssistedTackles=AssistedTackle,Pressures=Pressure,SoloSacks=SoloSack,AssistedSacks=AssistedSack) %>% group_by(EventCode) %>% mutate(PlayerId.1=PlayerId[1],PlayerId.2=PlayerId[2],PlayerId.3=PlayerId[3],PlayerId.4=PlayerId[4],PlayerId.5=PlayerId[5],PlayerId.6=PlayerId[6],PlayerId.7=PlayerId[7],PlayerId.8=PlayerId[8],PlayerId.9=PlayerId[9],PlayerId.10=PlayerId[10],Name.1=Name[1],Name.2=Name[2],Name.3=Name[3],Name.4=Name[4],Name.5=Name[5],Name.6=Name[6],Name.7=Name[7],Name.8=Name[8],Name.9=Name[9],Name.10=Name[10],RosterPosition.1=RosterPosition[1],RosterPosition.2=RosterPosition[2],RosterPosition.3=RosterPosition[3],RosterPosition.4=RosterPosition[4],RosterPosition.5=RosterPosition[5],RosterPosition.6=RosterPosition[6],RosterPosition.7=RosterPosition[7],RosterPosition.8=RosterPosition[8],RosterPosition.9=RosterPosition[9],RosterPosition.10=RosterPosition[10],OnFieldPosition.1=OnFieldPosition[1],OnFieldPosition.2=OnFieldPosition[2],OnFieldPosition.3=OnFieldPosition[3],OnFieldPosition.4=OnFieldPosition[4],OnFieldPosition.5=OnFieldPosition[5],OnFieldPosition.6=OnFieldPosition[6],OnFieldPosition.7=OnFieldPosition[7],OnFieldPosition.8=OnFieldPosition[8],OnFieldPosition.9=OnFieldPosition[9],OnFieldPosition.10=OnFieldPosition[10],SideOfBall.1=SideOfBall[1],SideOfBall.2=SideOfBall[2],SideOfBall.3=SideOfBall[3],SideOfBall.4=SideOfBall[4],SideOfBall.5=SideOfBall[5],SideOfBall.6=SideOfBall[6],SideOfBall.7=SideOfBall[7],SideOfBall.8=SideOfBall[8],SideOfBall.9=SideOfBall[9],SideOfBall.10=SideOfBall[10],TechniqueName.1=TechniqueName[1],TechniqueName.2=TechniqueName[2],TechniqueName.3=TechniqueName[3],TechniqueName.4=TechniqueName[4],TechniqueName.5=TechniqueName[5],TechniqueName.6=TechniqueName[6],TechniqueName.7=TechniqueName[7],TechniqueName.8=TechniqueName[8],TechniqueName.9=TechniqueName[9],TechniqueName.10=TechniqueName[10],IsRushing.1=IsRushing[1],IsRushing.2=IsRushing[2],IsRushing.3=IsRushing[3],IsRushing.4=IsRushing[4],IsRushing.5=IsRushing[5],IsRushing.6=IsRushing[6],IsRushing.7=IsRushing[7],IsRushing.8=IsRushing[8],IsRushing.9=IsRushing[9],IsRushing.10=IsRushing[10],SoloTackle.1=SoloTackle[1],SoloTackle.2=SoloTackle[2],SoloTackle.3=SoloTackle[3],SoloTackle.4=SoloTackle[4],SoloTackle.5=SoloTackle[5],SoloTackle.6=SoloTackle[6],SoloTackle.7=SoloTackle[7],SoloTackle.8=SoloTackle[8],SoloTackle.9=SoloTackle[9],SoloTackle.10=SoloTackle[10],AssistedTackle.1=AssistedTackle[1],AssistedTackle.2=AssistedTackle[2],AssistedTackle.3=AssistedTackle[3],AssistedTackle.4=AssistedTackle[4],AssistedTackle.5=AssistedTackle[5],AssistedTackle.6=AssistedTackle[6],AssistedTackle.7=AssistedTackle[7],AssistedTackle.8=AssistedTackle[8],AssistedTackle.9=AssistedTackle[9],AssistedTackle.10=AssistedTackle[10],Pressure.1=Pressure[1],Pressure.2=Pressure[2],Pressure.3=Pressure[3],Pressure.4=Pressure[4],Pressure.5=Pressure[5],Pressure.6=Pressure[6],Pressure.7=Pressure[7],Pressure.8=Pressure[8],Pressure.9=Pressure[9],Pressure.10=Pressure[10],SoloSack.1=SoloSack[1],SoloSack.2=SoloSack[2],SoloSack.3=SoloSack[3],SoloSack.4=SoloSack[4],SoloSack.5=SoloSack[5],SoloSack.6=SoloSack[6],SoloSack.7=SoloSack[7],SoloSack.8=SoloSack[8],SoloSack.9=SoloSack[9],SoloSack.10=SoloSack[10],AssistedSack.1=AssistedSack[1],AssistedSack.2=AssistedSack[2],AssistedSack.3=AssistedSack[3],AssistedSack.4=AssistedSack[4],AssistedSack.5=AssistedSack[5],AssistedSack.6=AssistedSack[6],AssistedSack.7=AssistedSack[7],AssistedSack.8=AssistedSack[8],AssistedSack.9=AssistedSack[9],AssistedSack.10=AssistedSack[10])
+
+eventdata2 <- eventdata %>% mutate(PassBreakups=PassBreakup,Interceptions=Interception,ForcedFumbles=ForcedFumble,RecoveredFumbles=RecoveredFumble) %>% group_by(EventCode) %>% mutate(PassBreakup.1=PassBreakup[1],PassBreakup.2=PassBreakup[2],PassBreakup.3=PassBreakup[3],PassBreakup.4=PassBreakup[4],PassBreakup.5=PassBreakup[5],PassBreakup.6=PassBreakup[6],PassBreakup.7=PassBreakup[7],PassBreakup.8=PassBreakup[8],PassBreakup.9=PassBreakup[9], PassBreakup.10=PassBreakup[10],Interception.1=Interception[1],Interception.2=Interception[2],Interception.3=Interception[3],Interception.4=Interception[4],Interception.5=Interception[5],Interception.6=Interception[6],Interception.7=Interception[7],Interception.8=Interception[8],Interception.9=Interception[9],Interception.10=Interception[10],ForcedFumble.1=ForcedFumble[1],ForcedFumble.2=ForcedFumble[2],ForcedFumble.3=ForcedFumble[3],ForcedFumble.4=ForcedFumble[4],ForcedFumble.5=ForcedFumble[5],ForcedFumble.6=ForcedFumble[6],ForcedFumble.7=ForcedFumble[7],ForcedFumble.8=ForcedFumble[8],ForcedFumble.9=ForcedFumble[9],ForcedFumble.10=ForcedFumble[10],RecoveredFumble.1=RecoveredFumble[1],RecoveredFumble.2=RecoveredFumble[2],RecoveredFumble.3=RecoveredFumble[3],RecoveredFumble.4=RecoveredFumble[4],RecoveredFumble.5=RecoveredFumble[5],RecoveredFumble.6=RecoveredFumble[6],RecoveredFumble.7=RecoveredFumble[7],RecoveredFumble.8=RecoveredFumble[8],RecoveredFumble.9=RecoveredFumble[9],RecoveredFumble.10=RecoveredFumble[10])
+
+finaleventdata <- cbind(eventdata1, eventdata2) 
+
+events1 <- finaleventdata %>%  group_by(EventCode...238) %>% summarise(GameID = first(GameID...1), EventID = first(EventID...2), Season = first(Season...3), Week = first(Week...4), StadiumName = first(StadiumName...5), OffensiveTeam = first(OffensiveTeam...6), DefensiveTeam = first(DefensiveTeam...7), OffTeamScoreBefore = first(OffTeamScoreBefore...8), DefTeamScoreBefore = first(DefTeamScoreBefore...9), Quarter = mean(Quarter...10), TimeLeft = mean(TimeLeft...11), Down = mean(Down...12), ToGo = first(ToGo...13), SideOfField = first(SideOfField...14), StartYard = mean(StartYard...15), EventType = first(EventType...16), FirstDown = first(FirstDown...17), Touchdown = first(Touchdown...18), Safety = first(Safety...19), Turnover = first(Turnover...20), RunDirection = first(RunDirection...21), UsedDesignedGap = first(UsedDesignedGap...22), Attempt = first(Attempt...23), Completion = first(Completion...24), Spike = first(Spike...25), ThrowDepth = first(ThrowDepth...26), PressureOnPlay = first(PressureOnPlay...27), SackOnPlay = first(SackOnPlay...28), PassBreakupOnPlay = first(PassBreakupOnPlay...29), InterceptionOnPlay = first(InterceptionOnPlay...30), FumbleByPasser = first(FumbleByPasser...31), FumbleByRusher = first(FumbleByRusher...32), FumbleByReceiver = first(FumbleByReceiver...33), OffensiveYardage = first(OffensiveYardage...34), EPA = mean(EPA...35, na.rm = TRUE), PlayDesc = first(PlayDesc...36), PlayerID.1=first(PlayerId.1), PlayerID.2=first(PlayerId.2), PlayerID.3=first(PlayerId.3), PlayerID.4=first(PlayerId.4), PlayerID.5=first(PlayerId.5), PlayerID.6=first(PlayerId.6), PlayerID.7=first(PlayerId.7), PlayerID.8=first(PlayerId.8), PlayerId.9=first(PlayerId.9), PlayerID.10=first(PlayerId.10), Name.1=first(Name.1), Name.2=first(Name.2), Name.3=first(Name.3), Name.4=first(Name.4), Name.5=first(Name.5), Name.6=first(Name.6), Name.7=first(Name.7), Name.8=first(Name.8), Name.9=first(Name.9), Name.10=first(Name.10))
+                                                             
+                                                             
+events2 <- finaleventdata %>%  group_by(EventCode...238) %>% summarize(RosterPosition.1=first(RosterPosition.1), RosterPosition.2=first(RosterPosition.2), RosterPosition.3=first(RosterPosition.3), RosterPosition.4=first(RosterPosition.4), RosterPosition.5=first(RosterPosition.5), RosterPosition.6=first(RosterPosition.6), RosterPosition.7=first(RosterPosition.7), RosterPosition.8=first(RosterPosition.8), RosterPosition.9=first(RosterPosition.9), RosterPosition.10=first(RosterPosition.10), OnFieldPosition.1=first(OnFieldPosition.1), OnFieldPosition.2=first(OnFieldPosition.2), OnFieldPosition.3=first(OnFieldPosition.3), OnFieldPosition.4=first(OnFieldPosition.4), OnFieldPosition.5=first(OnFieldPosition.5), OnFieldPosition.6=first(OnFieldPosition.6), OnFieldPosition.7=first(OnFieldPosition.7), OnFieldPosition.8=first(OnFieldPosition.8), OnFieldPosition.9=first(OnFieldPosition.9), OnFieldPosition.10=first(OnFieldPosition.10), SideofBall.1=first(SideOfBall.1), SideofBall.2=first(SideOfBall.2), SideofBall.3=first(SideOfBall.3), SideofBall.4=first(SideOfBall.4), SideofBall.5=first(SideOfBall.5), SideofBall.6=first(SideOfBall.6), SideOfBall.7=first(SideOfBall.7), SideofBall.8=first(SideOfBall.8), SideofBall.9=first(SideOfBall.9), SideofBall.10=first(SideOfBall.10), TechniqueName.1=first(TechniqueName.1), TechniqueName.2=first(TechniqueName.2), TechniqueName.3=first(TechniqueName.3), TechniqueName.4=first(TechniqueName.4), TechniqueName.5=first(TechniqueName.5), TechniqueName.6=first(TechniqueName.6), TechniqueName.7=first(TechniqueName.7), TechniqueName.8=first(TechniqueName.8), TechniqueName.9=first(TechniqueName.9), TechniqueName.10=first(TechniqueName.10), IsRushing.1=first(IsRushing.1), IsRushing.2=first(IsRushing.2), IsRushing.3=first(IsRushing.3))                                        
+events3 <- finaleventdata %>%  group_by(EventCode...238) %>% summarize(IsRushing.4=first(IsRushing.4), IsRushing.5=first(IsRushing.5), IsRushing.6=first(IsRushing.6), IsRushing.7=first(IsRushing.7), IsRushing.8=first(IsRushing.8), IsRushing.9=first(IsRushing.9), IsRushing.10=first(IsRushing.10), SoloTackle.1=first(SoloTackle.1), SoloTackle.2=first(SoloTackle.2), SoloTackle.3=first(SoloTackle.3), SoloTackle.4=first(SoloTackle.4), SoloTackle.5=first(SoloTackle.5), SoloTackle.6=first(SoloTackle.6), SoloTackle.7=first(SoloTackle.7), SoloTackle.8=first(SoloTackle.8), SoloTackle.9=first(SoloTackle.9), SoloTackle.10=first(SoloTackle.10), AssistedTackle.1=first(AssistedTackle.1), AssistedTackle.2=first(AssistedTackle.2), AssistedTackle.3=first(AssistedTackle.3), AssistedTackle.4=first(AssistedTackle.4), AssistedTackle.5=first(AssistedTackle.5), AssistedTackle.6=first(AssistedTackle.6), AssistedTackle.7=first(AssistedTackle.7), AssistedTackle.8=first(AssistedTackle.8), AssistedTackle.9=first(AssistedTackle.9), AssistedTackle.10=first(AssistedTackle.10), Pressure.1=first(Pressure.1), Pressure.2=first(Pressure.2), Pressure.3=first(Pressure.3), Pressure.4=first(Pressure.4), Pressure.5=first(Pressure.5), Pressure.6=first(Pressure.6), Pressure.7=first(Pressure.7), Pressure.8=first(Pressure.8), Pressure.9=first(Pressure.9), Pressure.10=first(Pressure.10), SoloSack.1=first(SoloSack.1), SoloSack.2=first(SoloSack.2), SoloSack.3=first(SoloSack.3), SoloSack.4=first(SoloSack.4), SoloSack.5=first(SoloSack.5), SoloSack.6=first(SoloSack.6), SoloSack.7=first(SoloSack.7), SoloSack.8=first(SoloSack.8), SoloSack.9=first(SoloSack.9), SoloSack.10=first(SoloSack.10), AssistedSack.1=first(AssistedSack.1), AssistedSack.2=first(AssistedSack.2), AssistedSack.3=first(AssistedSack.3), AssistedSack.4=first(AssistedSack.4), AssistedSack.5=first(AssistedSack.5), AssistedSack.6=first(AssistedSack.6), AssistedSack.7=first(AssistedSack.7), AssistedSack.8=first(AssistedSack.8), AssistedSack.9=first(AssistedSack.9), AssistedSack.10=first(AssistedSack.10), PassBreakup.1=first(PassBreakup.1), PassBreakup.2=first(PassBreakup.2), PassBreakup.3=first(PassBreakup.3), PassBreakup.4=first(PassBreakup.4), PassBreakup.5=first(PassBreakup.5), PassBreakup.6=first(PassBreakup.6), PassBreakup.7=first(PassBreakup.7), PassBreakup.8=first(PassBreakup.8), PassBreakup.9=first(PassBreakup.9),PassBreakup.10=first(PassBreakup.10), Interception.1=first(Interception.1), Interception.2=first(Interception.2), Interception.3=first(Interception.3), Interception.4=first(Interception.4), Interception.5=first(Interception.5), Interception.6=first(Interception.6), Interception.7=first(Interception.7), Interception.8=first(Interception.8), Interception.9=first(Interception.9), Interception.10=first(Interception.10), ForcedFumble.1=first(ForcedFumble.1), ForcedFumble.2=first(ForcedFumble.2), ForcedFumble.3=first(ForcedFumble.3), ForcedFumble.4=first(ForcedFumble.4), ForcedFumble.5=first(ForcedFumble.5), ForcedFumble.6=first(ForcedFumble.6), ForcedFumble.7=first(ForcedFumble.7), ForcedFumble.8=first(ForcedFumble.8), ForcedFumble.9=first(ForcedFumble.9), ForcedFumble.10=first(ForcedFumble.10), RecoveredFumble.1=first(RecoveredFumble.1), RecoveredFumble.2=first(RecoveredFumble.2), RecoveredFumble.3=first(RecoveredFumble.3), RecoveredFumble.4=first(RecoveredFumble.4), RecoveredFumble.5=first(RecoveredFumble.5), RecoveredFumble.6=first(RecoveredFumble.6), RecoveredFumble.7=first(RecoveredFumble.7), RecoveredFumble.8=first(RecoveredFumble.8), RecoveredFumble.9=first(RecoveredFumble.9), RecoveredFumble.10=first(RecoveredFumble.10))
+
+groupedeventdata <- cbind(events1, events2, events3)
+colnames(groupedeventdata)
+
+groupedeventdata <- read_csv("FinalEventData.csv")
+
+groupedeventdata <- groupedeventdata %>% select(c(EPA, DefensiveTeam))
+
+ATL <- groupedeventdata
+mean(groupedeventdata$EPA, na.rm = TRUE)
+
+```
+
+##RidgeDataforEPA
+```{r}
+
+
+groupedeventdata <- read_csv("FinalEventData.csv")
+ridgedata <- groupedeventdata %>%  select(c(EPA, Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.1")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.2")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.3")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.4")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.5")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.6")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.7")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.8")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.9")
+ridgedata <- fastDummies::dummy_cols(ridgedata, select_columns = "Name.10")
+ridgedata <- ridgedata %>% select(-c(Name.1, Name.2, Name.3, Name.4, Name.5, Name.6, Name.7, Name.8, Name.9, Name.10))
+
+colnames(ridgedata) <- sub("Name.1_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.2_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.3_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.4_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.5_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.6_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.7_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.8_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.9_", "", colnames(ridgedata))
+colnames(ridgedata) <-sub("Name.10_", "", colnames(ridgedata))
+
+ridgedata <- sapply(split.default(ridgedata, names(ridgedata)), rowSums, na.rm = TRUE)
+ridgedata <- as.data.frame(ridgedata)
+ridgedata <- ridgedata %>% select(EPA, everything())
+
+ridgedata
+
+linearRidge(EPA~., ridgedata) -> EPAridge
+EPAridge
+min(EPAridge$coef)
+coefdata <- EPAridge$coef
+```
+
+##PlayerData
+```{r}
+results <- fastDummies::dummy_cols(rawdata, select_columns = "OnFieldPosition")
+results <- fastDummies::dummy_cols(results, select_columns = "SideOfBall")
+results <- fastDummies::dummy_cols(results, select_columns = "TechniqueName")
+results <- fastDummies::dummy_cols(results, select_columns = "RosterPosition")
+
+
+playerdata <- results %>% group_by(PlayerId) %>% summarise(Name = first(Name), count = n(),EPA = mean(EPA, na.rm = TRUE), SoloTackle = sum(SoloTackle, na.rm = TRUE), AssistedTackle = sum(AssistedTackle, na.rm = TRUE), SoloSack = sum(SoloSack, na.rm = TRUE), AssistedSack = sum(AssistedSack, na.rm = TRUE),Pressure = sum(Pressure, na.rm=TRUE), PassBreakup = sum(PassBreakup, na.rm = TRUE), Interception = sum(Interception, na.rm = TRUE), ForcedFumble = sum(ForcedFumble, na.rm = TRUE), DL = sum(OnFieldPosition_DL, na.rm = TRUE), LB = sum(OnFieldPosition_LB, na.rm = TRUE), LeftSide = sum(SideOfBall_L, na.rm = TRUE), RightSide = sum(SideOfBall_R, na.rm = TRUE), Tech0 = sum(TechniqueName_0, na.rm = TRUE), Tech1 = sum(TechniqueName_1,na.rm = TRUE), Tech2 = sum(TechniqueName_2, na.rm = TRUE), Tech2i = sum(TechniqueName_2i, na.rm = TRUE), Tech3 = sum(TechniqueName_3, na.rm = TRUE), Tech4 = sum(TechniqueName_4, na.rm = TRUE), Tech4i = sum(TechniqueName_4i, na.rm = TRUE), Tech5 = sum(TechniqueName_5, na.rm = TRUE), Tech6 = sum(TechniqueName_6, na.rm = TRUE), Tech7 = sum(TechniqueName_7, na.rm = TRUE), Tech9 = sum(TechniqueName_9, na.rm = TRUE), TechOff = sum(`TechniqueName_Off Ball`, na.rm = TRUE), TechOutside = sum(TechniqueName_Outside, na.rm = TRUE), DT = sum(RosterPosition_DT, na.rm = TRUE), DE = sum(RosterPosition_DE, na.rm = TRUE), RosterLB = sum(RosterPosition_LB, na.rm = TRUE), team = first(DefensiveTeam))
+
+playerdata <- playerdata %>% filter(count > 25)
+
+write_csv(playerdata, "PlayerData.csv")
+
+```
+
+##ModelBased
+```{r}
+df <- playerdata %>% select(-c(PlayerId, Name))
+
+playerdf <- scale(df[, -1]) ##Scaling the Data
+playerdf[is.na(playerdf)] <- 0 ##Removing NAs
+df <- data.matrix(data[,-1])
+
+ICL <- mclustICL(df) ##Clustering
+summary(ICL)
+ICL
+plot(ICL)
+
+BIC <- mclustBIC(df)
+summary(BIC)
+BIC
+plot(BIC)
+
+mc <- Mclust(df)
+summary(mc) ##Summary
+mc$modelName ##Model Name                
+mc$G ## Number of Clusters                        
+head(mc$z, 30) ##Probability Values              
+head(mc$classification, 30) ##Cluster for each chain
+
+```
+
+##HHCluster
+```{r}
+
+mydata -> data
+results$OffensiveYardage <- as.numeric(results$OffensiveYardage)
+
+matt <- mydata %>% filter(PlayerId==6392)
+results <- fastDummies::dummy_cols(data, select_columns = "SackOnPlay")
+
+results$TackleForLoss <- ifelse(results$OffensiveYardage < 0 & results$SackOnPlay_1 == 0, 1, 0)
+data <- results %>% select(c(Name, TackleForLoss, PlayerId))
+data <- data %>% group_by(PlayerId) %>% summarize(sum(TackleForLoss, na.rm=TRUE), Name = first(Name))
+write_csv(data,"TackleForLoss.csv")
+colnames(results)
+```
+
+
+```{r}
+mydata <- fastDummies::dummy_cols(mydata, select_columns = "SackOnPlay")
+
+mydata$TackleForLossSolo <- ifelse(mydata$OffensiveYardage<0 & mydata$SackOnPlay_1==0 & mydata$SoloTackle == 1, 1, 0)
+
+mydata$TackleForLossAssisted <- ifelse(mydata$OffensiveYardage<0 & mydata$SackOnPlay_1==0 & mydata$AssistedTackle == 1, 1, 0)
+
+mydata$N
+data <- mydata %>% group_by(PlayerId) %>% summarise(first(Name), sum(TackleForLossSolo), sum(TackleForLossAssisted))
+
+data <- mydata %>% select(c(Name, PlayerId, TackleForLossAssisted, TackleForLossSolo))
+
+write_csv(data,"TackleForLoss.csv")
+
+```
+

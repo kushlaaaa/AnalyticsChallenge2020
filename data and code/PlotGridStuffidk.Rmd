@@ -1,0 +1,179 @@
+
+
+```{r}
+
+urlfile = "https://raw.githubusercontent.com/SportsInfoSolutions/AnalyticsChallenge2020/master/Data/AnalyticsChallenge2020Data.csv"
+data<-read_csv(url(urlfile))
+MasterSheet <- read_csv("MasterSheet.csv")
+
+data <- fastDummies::dummy_cols(data, select_columns = "SackOnPlay")
+
+data$TackleForLossSolo <- ifelse(data$OffensiveYardage<0 & data$SackOnPlay_1==0 & data$SoloTackle == 1, 1, 0)
+
+data$TackleForLossAssisted <- ifelse(data$OffensiveYardage<0 & data$SackOnPlay_1==0 & data$AssistedTackle == 1, 1, 0)
+
+situations <- data %>%
+  filter(RosterPosition == "DE"| RosterPosition == "DT") %>%
+  group_by(Name, EventType) %>%
+  summarize(mean_epa = mean(EPA, na.rm = TRUE),
+            IsRushing = sum(IsRushing),
+            SoloTackle = sum(SoloTackle),
+            AssistedTackle = sum(AssistedTackle),
+            SoloSack = sum(SoloSack),
+            AssistedSack = sum(AssistedSack),
+            Pressure = sum(Pressure),
+            PassBreakup = sum(PassBreakup),
+            Interception = sum(Interception),
+            ForcedFumble = sum(ForcedFumble),
+            RecoveredFumble = sum(RecoveredFumble),
+            TackleForLossSolo = sum(TackleForLossSolo),
+            TackleForLossAssisted = sum(TackleForLossAssisted))
+
+situations <- situations %>%
+  filter(EventType == "rush" | EventType == "pass")
+
+runpass <- situations %>%
+  mutate(RawStatsRating = TackleForLossSolo*.46875 + TackleForLossAssisted*.40625 + SoloTackle*.1 + AssistedTackle*.05 +
+         SoloSack*.75 + AssistedSack*.5 + Pressure*.25 + PassBreakup*.375 + Interception + ForcedFumble)
+
+positionlabel <- data.frame(MasterSheet$Name, MasterSheet$LabelledPosition)
+
+playtype <- merge(positionlabel, runpass, by.x = "MasterSheet.Name", by.y = "Name")
+
+runRawStats <- playtype %>%
+  filter(EventType == "rush") %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for Rushing Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "none")
+runRawStats
+
+passRawStats <- playtype %>%
+  filter(EventType == "pass") %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for Passing Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "none")
+
+passRawStats
+
+##downs 
+
+downs <- data %>%
+  filter(RosterPosition == "DE"| RosterPosition == "DT") %>%
+  group_by(Name, Down) %>%
+  summarize(mean_epa = mean(EPA, na.rm = TRUE),
+            IsRushing = sum(IsRushing),
+            SoloTackle = sum(SoloTackle),
+            AssistedTackle = sum(AssistedTackle),
+            SoloSack = sum(SoloSack),
+            AssistedSack = sum(AssistedSack),
+            Pressure = sum(Pressure),
+            PassBreakup = sum(PassBreakup),
+            Interception = sum(Interception),
+            ForcedFumble = sum(ForcedFumble),
+            RecoveredFumble = sum(RecoveredFumble),
+            TackleForLossSolo = sum(TackleForLossSolo),
+            TackleForLossAssisted = sum(TackleForLossAssisted))
+
+downs <- downs %>%
+  mutate(RawStatsRating = TackleForLossSolo*.46875 + TackleForLossAssisted*.40625 + SoloTackle*.1 + AssistedTackle*.05 +
+           SoloSack*.75 + AssistedSack*.5 + Pressure*.25 + PassBreakup*.375 + Interception + ForcedFumble)
+
+alldowns <- merge(positionlabel, downs, by.x = "MasterSheet.Name", by.y = "Name")
+
+firstandsecondRawStats <- alldowns %>%
+  filter(Down == 1 | Down == 2) %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for First and Second Down Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "none")
+
+firstandsecondRawStats
+
+thirdRawStats <- alldowns %>%
+  filter(Down == 3) %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for Third Down Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "none")
+
+thirdRawStats
+
+
+## quarter
+quarter <- data %>%
+  filter(RosterPosition == "DE"| RosterPosition == "DT") %>%
+  group_by(Name, Quarter) %>%
+  summarize(mean_epa = mean(EPA, na.rm = TRUE),
+            IsRushing = sum(IsRushing),
+            SoloTackle = sum(SoloTackle),
+            AssistedTackle = sum(AssistedTackle),
+            SoloSack = sum(SoloSack),
+            AssistedSack = sum(AssistedSack),
+            Pressure = sum(Pressure),
+            PassBreakup = sum(PassBreakup),
+            Interception = sum(Interception),
+            ForcedFumble = sum(ForcedFumble),
+            RecoveredFumble = sum(RecoveredFumble),
+            TackleForLossSolo = sum(TackleForLossSolo),
+            TackleForLossAssisted = sum(TackleForLossAssisted))
+
+quarter <- quarter %>%
+  mutate(RawStatsRating = TackleForLossSolo*.46875 + TackleForLossAssisted*.40625 + SoloTackle*.1 + AssistedTackle*.05 +
+           SoloSack*.75 + AssistedSack*.5 + Pressure*.25 + PassBreakup*.375 + Interception + ForcedFumble)
+
+allquarters <- merge(positionlabel, quarter, by.x = "MasterSheet.Name", by.y = "Name")
+
+firstthreeRawStats <- allquarters %>%
+  filter(Quarter == 1 | Quarter == 2 | Quarter == 3) %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for First, Second, and Third Quarter Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "none")
+
+firstthreeRawStats
+
+fourthRawStats <- allquarters %>%
+  filter(Quarter == 4) %>%
+  ggplot(aes(x=factor(MasterSheet.LabelledPosition), y=RawStatsRating, fill=factor(MasterSheet.LabelledPosition))) + geom_boxplot() +
+  labs(title = "Raw Stats Rating for Fourth Quarter Plays by Labelled Position", x = "Position", y = "Raw Stats Rating") + theme_bw() + theme(axis.text.x = element_text(angle = 90)) + theme(legend.position = "bottom")+labs(fill="")
+
+fourthRawStats
+
+
+
+```
+
+
+```{r}
+runRawStats
+passRawStats
+firstandsecondRawStats
+thirdRawStats
+firstthreeRawStats
+fourthRawStats
+
+get_legend <- function(myggplot){
+        tmp <- ggplot_gtable(ggplot_build(myggplot))
+        leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+        legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+legend <- get_legend(fourthRawStats)
+
+tmp <- ggplot_gtable(ggplot_build(RidgeRating)) + theme_bw()
+tmp
+blankPlot <- ggplot()+geom_blank(aes(1,1))+
+  theme(
+    plot.background = element_blank(), 
+   panel.grid.major = element_blank(),
+   panel.grid.minor = element_blank(), 
+   panel.border = element_blank(),
+   panel.background = element_blank(),
+   axis.title.x = element_blank(),
+   axis.title.y = element_blank(),
+   axis.text.x = element_blank(), 
+   axis.text.y = element_blank(),
+   axis.ticks = element_blank(),
+   axis.line = element_blank()
+     )
+
+final <- grid.arrange(runRawStats, passRawStats, legend, ncol=2, nrow=2, widths=c(60,60))
+
+ggsave("Final.jpeg", final)
+
+
+```
+

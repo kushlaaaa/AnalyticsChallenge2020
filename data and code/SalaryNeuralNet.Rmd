@@ -1,0 +1,84 @@
+
+```{r}
+library(tidyverse)
+library(neuralnet)
+```
+
+
+
+```{r}
+rawdata <- read_csv("MasterSheet.csv")
+results <- fastDummies::dummy_cols(rawdata, select_columns = "MiniMaxCluster")
+results <- fastDummies::dummy_cols(results, select_columns = "DefensiveScheme")
+
+
+DEdata <- results %>% filter(Position=="DE") %>% select(c(Hybrid, coef.EPAridge., coef.Sackridge., coef.OffensiveYardageridge., coef.Pressureridge., MiniMaxCluster_1, MiniMaxCluster_2, MiniMaxCluster_3, MiniMaxCluster_4, MiniMaxCluster_5, MiniMaxCluster_6, count))
+
+DEdata[is.na(DEdata)]<-0
+
+DEmaxs <- apply(DEdata, 2, max) 
+DEmins <- apply(DEdata, 2, min)
+
+DEscaled <- as.data.frame(scale(DEdata, center = DEmins, scale = DEmaxs - DEmins))
+
+DEindex <- sample(1:nrow(DEdata),round(0.8*nrow(DEdata)))
+
+DEtrain <- DEscaled[DEindex,]
+DEtest <- DEscaled[-DEindex,]
+
+
+DEnn=neuralnet(AvgSalary~., data=DEscaled, hidden=c(5,5,3), linear.output = TRUE)
+plot(DEnn)
+
+
+DEoutput <- compute(DEnn, DEscaled[-c(1)])
+DEoutput
+summary(DEoutput)
+DEoutput$net.result
+
+####
+
+DTdata <- results %>% filter(Position=="DT") %>% select(c(Hybrid, coef.EPAridge., coef.Sackridge., coef.OffensiveYardageridge., coef.Pressureridge., MiniMaxCluster_1, MiniMaxCluster_2, MiniMaxCluster_3, MiniMaxCluster_4, MiniMaxCluster_5, MiniMaxCluster_6, AvgSalary))
+
+DTdata[is.na(DTdata)]<-0
+
+DTmaxs <- apply(DTdata, 2, max) 
+DTmins <- apply(DTdata, 2, min)
+
+DTscaled <- as.data.frame(scale(DTdata, center = DTmins, scale = DTmaxs - DTmins))
+
+DTindex <- sample(1:nrow(DTdata),round(0.8*nrow(DTdata)))
+
+DTtrain <- DTscaled[DEindex,]
+DTtest <- DTscaled[-DEindex,]
+
+
+DTnn=neuralnet(AvgSalary~., data=DTscaled, hidden=c(5,5,3), linear.output = TRUE)
+plot(DTnn)
+
+DToutput <- compute(DTnn, DTscaled[-c(1)])
+summary(DEoutput)
+DEoutput$net.result
+
+## What factors affects Salary for different positions
+## Comapring Salary Breakdowns for position
+```
+
+
+```{r}
+
+data <- rawdata %>% select(c(Name, AdjEPA, MiniMaxCluster, LabelledPosition, AverageEPA)) 
+
+ggplot(data=data, aes(x=MiniMaxCluster, y=AdjEPA, group=MiniMaxCluster)) + geom_boxplot() +ylim(-50,50)
+
+ggplot(data=data, aes(x=MiniMaxCluster, y=AverageEPA, group=MiniMaxCluster)) + geom_boxplot() +ylim(-1,1)
+
+cluster1 <- rawdata %>% filter(MiniMaxCluster==4)
+
+ggplot(data=rawdata, aes(x=AvgSalary, y=AdjEPA, color=factor(LabelledPosition))) + geom_point() +scale_color_manual(values = c("red", "blue", "green", "orange", "cornflowerblue", "purple", "pink", "yellow", "darkorange", "black", "darkred", "brown", "darkgreen"))+theme_bw()
+
+
+ggplot(data=rawdata, aes(x=AvgSalary, y=AdjEPA, color=factor(RfPredPos))) + geom_point() +scale_color_manual(values = c("red", "blue", "green"))+theme_bw()
+
+```
+
